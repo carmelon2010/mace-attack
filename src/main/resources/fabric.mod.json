@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "sprint",
+  "version": "${version}",
+  "name": "sprint",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "me.carmel.sprint.client.SprintClient"
+    ],
+    "main": [
+      "me.carmel.sprint.Sprint"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
