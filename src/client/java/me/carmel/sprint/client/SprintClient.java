@@ -25,7 +25,7 @@ public class SprintClient implements ClientModInitializer {
 
             if (extraSprintKey.wasPressed()) {
                 PlayerInventory inventory = client.player.getInventory();
-                for (int i = 0; i < inventory.size(); i++) {
+                for (int i = 0; i < inventory.getHotbarSize(); i++) {
                     ItemStack stack = inventory.getStack(i);
                     if (!stack.isEmpty()) {
                         System.out.println("Slot " + i + ": " + stack.getName().getString() + " x" + stack.getCount());
