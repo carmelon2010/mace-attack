@@ -7,6 +7,7 @@ import net.minecraft.client.option.KeyBinding;
 import org.lwjgl.glfw.GLFW;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.Hand;
 
 public class SprintClient implements ClientModInitializer {
     private static KeyBinding extraSprintKey;
@@ -25,17 +26,31 @@ public class SprintClient implements ClientModInitializer {
 
             if (extraSprintKey.wasPressed()) {
                 PlayerInventory inventory = client.player.getInventory();
+
                 for (int i = 0; i < inventory.getHotbarSize(); i++) {
                     ItemStack stack = inventory.getStack(i);
-                    if (!stack.isEmpty()) {
-                        System.out.println("Slot " + i + ": " + stack.getName().getString() + " x" + stack.getCount());
+                    if (stack.isEmpty()) {
+                        continue;
                     }
+                    System.out.println("Slot " + i + ": " + stack.getName().getString() + " x" + stack.getCount());
+                    if (!stack.getItemName().getString().toLowerCase().contains("mace")) {
+                        continue;
+                    }
+                    inventory.setSelectedSlot(i);
+
+                    int slot = inventory.getSelectedSlot();
+
+                    inventory.setSelectedSlot(i);
+
+                    // This forces the client to attack the currently targeted entity
+                    if (client.targetedEntity != null) {
+                        client.interactionManager.attackEntity(client.player, client.targetedEntity);
+                    }
+                    // Swing hand animation
+                    client.player.swingHand(Hand.MAIN_HAND);
                 }
 
             }
-//            while (extraSprintKey.wasPressed()) {
-//                client.player.setSprinting(true);
-//            }
         });
     }
 }
