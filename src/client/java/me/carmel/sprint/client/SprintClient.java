@@ -1,10 +1,11 @@
 package me.carmel.sprint.client;
 
+import com.mojang.logging.LogUtils;
+import org.slf4j.Logger;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.util.math.Direction;
 import org.lwjgl.glfw.GLFW;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
@@ -27,13 +28,22 @@ public class SprintClient implements ClientModInitializer {
             }
 
             if (isattacking){
-                if (!extraSprintKey.isPressed()) {
-                    System.out.println("returning to " + lastSelectedSlot);
-                    isattacking = false;
-                    if (lastSelectedSlot != -1) {
-                        client.player.getInventory().setSelectedSlot(lastSelectedSlot);
-                    }
+                System.out.println("returning to " + lastSelectedSlot);
+                isattacking = false;
+                if (lastSelectedSlot != -1) {
+                    client.player.getInventory().setSelectedSlot(lastSelectedSlot);
                 }
+                return;
+            }
+            if (client.attackCooldown > 0) {
+                return;
+            } else if (client.crosshairTarget == null) {
+                Logger LOGGER = LogUtils.getLogger();
+                LOGGER.error("Null returned as 'hitResult', this shouldn't happen!");
+                if (client.interactionManager.hasLimitedAttackSpeed()) {
+                    client.attackCooldown = 10;
+                }
+
                 return;
             }
 
@@ -60,11 +70,12 @@ public class SprintClient implements ClientModInitializer {
                     if (client.interactionManager != null) {
                         client.player.swingHand(Hand.MAIN_HAND);
 
-                        if (client.crosshairTarget != null && client.crosshairTarget.getType() == net.minecraft.util.hit.HitResult.Type.ENTITY) {
-                            client.interactionManager.attackEntity(client.player, ((net.minecraft.util.hit.EntityHitResult) client.crosshairTarget).getEntity());
-                        } else {
-                            client.interactionManager.attackBlock(client.player.getBlockPos(), Direction.EAST);
-                        }
+                        KeyBinding.setKeyPressed(client.options.attackKey.getDefaultKey(), true);
+                        KeyBinding.onKeyPressed(client.options.attackKey.getDefaultKey());
+
+                        client.player.swingHand(Hand.MAIN_HAND);
+
+                        KeyBinding.setKeyPressed(client.options.attackKey.getDefaultKey(), false);
                     }
 
 
