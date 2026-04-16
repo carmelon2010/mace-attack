@@ -11,6 +11,8 @@ import net.minecraft.util.Hand;
 
 public class SprintClient implements ClientModInitializer {
     private static KeyBinding extraSprintKey;
+    private int lastSelectedSlot = -1;
+    private boolean isattacking = false;
 
     @Override
     public void onInitializeClient() {
@@ -23,6 +25,16 @@ public class SprintClient implements ClientModInitializer {
                 return;
             }
 
+            if (isattacking){
+                if (!extraSprintKey.isPressed()) {
+                    System.out.println("returning to " + lastSelectedSlot);
+                    isattacking = false;
+                    if (lastSelectedSlot != -1) {
+                        client.player.getInventory().setSelectedSlot(lastSelectedSlot);
+                    }
+                }
+                return;
+            }
 
             if (extraSprintKey.wasPressed()) {
                 PlayerInventory inventory = client.player.getInventory();
@@ -32,13 +44,14 @@ public class SprintClient implements ClientModInitializer {
                     if (stack.isEmpty()) {
                         continue;
                     }
-                    System.out.println("Slot " + i + ": " + stack.getName().getString() + " x" + stack.getCount());
+//                    System.out.println("Slot " + i + ": " + stack.getName().getString() + " x" + stack.getCount());
                     if (!stack.getItemName().getString().toLowerCase().contains("mace")) {
                         continue;
                     }
-                    inventory.setSelectedSlot(i);
 
-                    int slot = inventory.getSelectedSlot();
+                    isattacking = true;
+                    lastSelectedSlot = inventory.getSelectedSlot();
+                    System.out.println("moved from" + lastSelectedSlot);
 
                     inventory.setSelectedSlot(i);
 
