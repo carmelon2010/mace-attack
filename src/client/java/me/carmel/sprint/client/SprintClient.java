@@ -4,6 +4,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.option.KeyBinding;
+import net.minecraft.util.math.Direction;
 import org.lwjgl.glfw.GLFW;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
@@ -45,7 +46,7 @@ public class SprintClient implements ClientModInitializer {
                         continue;
                     }
 //                    System.out.println("Slot " + i + ": " + stack.getName().getString() + " x" + stack.getCount());
-                    if (!stack.getItemName().getString().toLowerCase().contains("mace")) {
+                    if (!stack.getItemName().getString().toLowerCase().contains("spear")) {
                         continue;
                     }
 
@@ -55,12 +56,18 @@ public class SprintClient implements ClientModInitializer {
 
                     inventory.setSelectedSlot(i);
 
-                    // This forces the client to attack the currently targeted entity
-                    if (client.targetedEntity != null) {
-                        client.interactionManager.attackEntity(client.player, client.targetedEntity);
+                    // put jab attack here
+                    if (client.interactionManager != null) {
+                        client.player.swingHand(Hand.MAIN_HAND);
+
+                        if (client.crosshairTarget != null && client.crosshairTarget.getType() == net.minecraft.util.hit.HitResult.Type.ENTITY) {
+                            client.interactionManager.attackEntity(client.player, ((net.minecraft.util.hit.EntityHitResult) client.crosshairTarget).getEntity());
+                        } else {
+                            client.interactionManager.attackBlock(client.player.getBlockPos(), Direction.EAST);
+                        }
                     }
-                    // Swing hand animation
-                    client.player.swingHand(Hand.MAIN_HAND);
+
+
                 }
 
             }
