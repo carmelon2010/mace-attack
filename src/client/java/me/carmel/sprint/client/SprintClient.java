@@ -1,7 +1,5 @@
 package me.carmel.sprint.client;
 
-import com.mojang.logging.LogUtils;
-import org.slf4j.Logger;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -11,6 +9,12 @@ import org.lwjgl.glfw.GLFW;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Hand;
+
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SprintClient implements ClientModInitializer {
     private static KeyBinding SpearLunge;
@@ -41,24 +45,32 @@ public class SprintClient implements ClientModInitializer {
 
         if (SpearLunge.wasPressed()) {
             PlayerInventory inventory = client.player.getInventory();
-            for (int i = 0; i < inventory.getHotbarSize(); i++) {
+            Map<Map<String, Object>, Integer> eligibleSpears = new HashMap<>();
+            for (int i = 0; i < PlayerInventory.getHotbarSize(); i++) {
                 ItemStack stack = inventory.getStack(i);
-                if (!isEligibleSpear(stack)) {
+                if (isEligibleSpear(stack) == null) {
                     continue;
                 }
-
-                if (!isattacking) {
-                    lastSelectedSlot = inventory.getSelectedSlot();
-                }
-                isattacking = true;
-                System.out.println("moved from" + inventory.getSelectedSlot());
-
-                inventory.setSelectedSlot(i);
-                triggerMainHandAttack(client);
+                eligibleSpears.put(isEligibleSpear(stack), i);
             }
+            int i = eligibleSpears. // max by lunge level
+                    entrySet()
+                    .stream()
+                    .max(Comparator.comparingInt(e -> (int) e.getKey().get("level")))
+                    .map(Map.Entry::getValue)
+                    .orElse(-1);
+            if (!isattacking) {
+                lastSelectedSlot = inventory.getSelectedSlot();
+            }
+            isattacking = true;
+            System.out.println("moved from" + inventory.getSelectedSlot());
+
+            inventory.setSelectedSlot(i);
+            triggerMainHandAttack(client);
+
         } else if (MaceAttack.wasPressed()) {
             PlayerInventory inventory = client.player.getInventory();
-            for (int i = 0; i < inventory.getHotbarSize(); i++) {
+            for (int i = 0; i < PlayerInventory.getHotbarSize(); i++) {
                 ItemStack stack = inventory.getStack(i);
                 if (!isEligibleMace(stack)) {
                     continue;
@@ -79,6 +91,7 @@ public class SprintClient implements ClientModInitializer {
     }
 
     private boolean restoreSlotIfNeeded(MinecraftClient client) {
+        assert client.player != null;
         if (!isattacking) {
             return false;
         }
@@ -92,19 +105,31 @@ public class SprintClient implements ClientModInitializer {
     }
 
     private boolean shouldSkipAttack(MinecraftClient client) {
-        if (client.attackCooldown > 0) {
-            return true;
-        }
-        return false;
+        return client.attackCooldown > 0;
     }
 
-    private boolean isEligibleSpear(ItemStack stack) {
+    private Map<String, Object> isEligibleSpear(ItemStack stack) {
         if (stack.isEmpty()) {
-            return false;
+            return null;
         }
 
-        return stack.getItemName().getString().toLowerCase().contains("spear")
-                && stack.getEnchantments().getEnchantments().contains("minecraft:lunge");
+        String itemName = stack.getItemName().getString().toLowerCase();
+        String enchantments = stack.getEnchantments().toString();
+        if (!itemName.contains("spear") || !enchantments.contains("minecraft:lunge")) {
+            return null;
+        }
+
+        Matcher levelMatcher = Pattern.compile("minecraft:lunge[^0-9]*(\\d+)").matcher(enchantments);
+        if (!levelMatcher.find()) {
+            return null;
+        }
+        int lungeLevel = Integer.parseInt(levelMatcher.group(1));
+
+        Map<String, Object> spearData = new HashMap<>();
+        spearData.put("enchant", "lunge");
+        spearData.put("level", lungeLevel);
+        System.out.println("Found eligible spear: " + itemName + " with lunge level " + lungeLevel);
+        return spearData;
     }
 
     private boolean isEligibleMace(ItemStack stack) {
@@ -116,6 +141,7 @@ public class SprintClient implements ClientModInitializer {
     }
 
     private void triggerMainHandAttack(MinecraftClient client) {
+        assert client.player != null;
         if (client.interactionManager == null) {
             return;
         }
