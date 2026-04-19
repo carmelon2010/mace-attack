@@ -39,7 +39,7 @@ public class SprintClient implements ClientModInitializer {
             return;
         }
 
-        if (!SpearLunge.wasPressed()) {
+        if (SpearLunge.wasPressed()) {
             PlayerInventory inventory = client.player.getInventory();
             for (int i = 0; i < inventory.getHotbarSize(); i++) {
                 ItemStack stack = inventory.getStack(i);
