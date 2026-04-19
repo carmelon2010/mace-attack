@@ -43,7 +43,7 @@ public class SprintClient implements ClientModInitializer {
             return;
         }
 
-        if (SpearLunge.wasPressed()) {
+        if (SpearLunge.isPressed()) {
             PlayerInventory inventory = client.player.getInventory();
             Map<Map<String, Object>, Integer> eligibleSpears = new HashMap<>();
             for (int i = 0; i < PlayerInventory.getHotbarSize(); i++) {
