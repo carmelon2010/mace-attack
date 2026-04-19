@@ -1,4 +1,4 @@
-package me.carmel.sprint.client;
+package me.carmel.hotkeys.client;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SprintClient implements ClientModInitializer {
+public class hotkeysClient implements ClientModInitializer {
     private static KeyBinding SpearLunge;
     private int lastSelectedSlot = -1;
     private boolean isattacking = false;
@@ -53,20 +53,17 @@ public class SprintClient implements ClientModInitializer {
                 }
                 eligibleSpears.put(isEligibleSpear(stack), i);
             }
+            if (eligibleSpears.isEmpty()){
+                return;
+            }
             int i = eligibleSpears. // max by lunge level
                     entrySet()
                     .stream()
                     .max(Comparator.comparingInt(e -> (int) e.getKey().get("level")))
                     .map(Map.Entry::getValue)
                     .orElse(-1);
-            if (!isattacking) {
-                lastSelectedSlot = inventory.getSelectedSlot();
-            }
-            isattacking = true;
-            System.out.println("moved from" + inventory.getSelectedSlot());
 
-            inventory.setSelectedSlot(i);
-            triggerMainHandAttack(client);
+            Attack(client, inventory, i);
 
         } else if (MaceAttack.wasPressed()) {
             PlayerInventory inventory = client.player.getInventory();
@@ -76,18 +73,22 @@ public class SprintClient implements ClientModInitializer {
                     continue;
                 }
 
-                if (!isattacking) {
-                    lastSelectedSlot = inventory.getSelectedSlot();
-                }
-                isattacking = true;
-                System.out.println("moved from" + inventory.getSelectedSlot());
-
-                inventory.setSelectedSlot(i);
-                triggerMainHandAttack(client);
+                Attack(client, inventory, i);
             }
 
         }
 
+    }
+
+    private void Attack(MinecraftClient client, PlayerInventory inventory, int i) {
+        if (!isattacking) {
+            lastSelectedSlot = inventory.getSelectedSlot();
+        }
+        isattacking = true;
+        System.out.println("moved from" + inventory.getSelectedSlot());
+
+        inventory.setSelectedSlot(i);
+        triggerMainHandAttack(client);
     }
 
     private boolean restoreSlotIfNeeded(MinecraftClient client) {

@@ -14,7 +14,7 @@ loom {
     splitEnvironmentSourceSets()
 
     mods {
-        "sprint" {
+        "hotkeys" {
             sourceSet sourceSets["main"]
             sourceSet sourceSets["client"]
         }

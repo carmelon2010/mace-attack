@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "id": "sprint",
+  "id": "hotkeys",
   "version": "${version}",
-  "name": "sprint",
+  "name": "hotkeys",
   "description": "",
   "authors": [],
   "contact": {},
@@ -10,10 +10,10 @@
   "environment": "client",
   "entrypoints": {
     "client": [
-      "me.carmel.sprint.client.SprintClient"
+      "me.carmel.hotkeys.client.hotkeysClient"
     ],
     "main": [
-      "me.carmel.sprint.Sprint"
+      "me.carmel.hotkeys.hotkeys"
     ]
   },
   "depends": {
