@@ -10,17 +10,33 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Hand;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class hotkeysClient implements ClientModInitializer {
     private static KeyBinding SpearLunge;
-    private int lastSelectedSlot = -1;
-    private boolean isattacking = false;
     private static KeyBinding MaceAttack;
+    private static final int ATTACK_DELAY_TICKS = 2;
+
+    private long currentTick = 0;
+    private boolean attackQueued = false;
+    private final List<ScheduledAction> scheduledActions = new ArrayList<>();
+
+    private static class ScheduledAction {
+        private final long runAtTick;
+        private final Runnable action;
+
+        private ScheduledAction(long runAtTick, Runnable action) {
+            this.runAtTick = runAtTick;
+            this.action = action;
+        }
+    }
 
     @Override
     public void onInitializeClient() {
@@ -35,11 +51,14 @@ public class hotkeysClient implements ClientModInitializer {
     }
 
     private void handleClientTick(MinecraftClient client) {
+        currentTick++;
+        runScheduledActions();
+
         if (client.player == null) {
             return;
         }
 
-        if (restoreSlotIfNeeded(client) || shouldSkipAttack(client)) {
+        if (attackQueued || shouldSkipAttack(client)) {
             return;
         }
 
@@ -48,10 +67,11 @@ public class hotkeysClient implements ClientModInitializer {
             Map<Map<String, Object>, Integer> eligibleSpears = new HashMap<>();
             for (int i = 0; i < PlayerInventory.getHotbarSize(); i++) {
                 ItemStack stack = inventory.getStack(i);
-                if (isEligibleSpear(stack) == null) {
+                Map<String, Object> spearData = isEligibleSpear(stack);
+                if (spearData == null) {
                     continue;
                 }
-                eligibleSpears.put(isEligibleSpear(stack), i);
+                eligibleSpears.put(spearData, i);
             }
             if (eligibleSpears.isEmpty()){
                 return;
@@ -63,7 +83,7 @@ public class hotkeysClient implements ClientModInitializer {
                     .map(Map.Entry::getValue)
                     .orElse(-1);
 
-            Attack(client, inventory, i);
+            queueAttack(client, inventory, i);
 
         } else if (MaceAttack.wasPressed()) {
             PlayerInventory inventory = client.player.getInventory();
@@ -73,36 +93,68 @@ public class hotkeysClient implements ClientModInitializer {
                     continue;
                 }
 
-                Attack(client, inventory, i);
+                queueAttack(client, inventory, i);
+                break;
             }
 
         }
 
     }
 
-    private void Attack(MinecraftClient client, PlayerInventory inventory, int i) {
-        if (!isattacking) {
-            lastSelectedSlot = inventory.getSelectedSlot();
-        }
-        isattacking = true;
-        System.out.println("moved from" + inventory.getSelectedSlot());
-
-        inventory.setSelectedSlot(i);
-        triggerMainHandAttack(client);
+    private void scheduleActionAfterTicks(int delayTicks, Runnable action) {
+        long runAt = currentTick + Math.max(0, delayTicks);
+        scheduledActions.add(new ScheduledAction(runAt, action));
     }
 
-    private boolean restoreSlotIfNeeded(MinecraftClient client) {
-        assert client.player != null;
-        if (!isattacking) {
-            return false;
+    private void runScheduledActions() {
+        List<Runnable> dueActions = new ArrayList<>();
+        Iterator<ScheduledAction> iterator = scheduledActions.iterator();
+        while (iterator.hasNext()) {
+            ScheduledAction scheduledAction = iterator.next();
+            if (scheduledAction.runAtTick > currentTick) {
+                continue;
+            }
+
+            dueActions.add(scheduledAction.action);
+            iterator.remove();
         }
 
-        System.out.println("returning to " + lastSelectedSlot);
-        isattacking = false;
-        if (lastSelectedSlot != -1) {
-            client.player.getInventory().setSelectedSlot(lastSelectedSlot);
+        for (Runnable action : dueActions) {
+            action.run();
         }
-        return true;
+    }
+
+    private void queueAttack(MinecraftClient client, PlayerInventory inventory, int slot) {
+        if (slot < 0 || attackQueued) {
+            return;
+        }
+
+        int originalSlot = inventory.getSelectedSlot();
+        attackQueued = true;
+        inventory.setSelectedSlot(slot);
+        scheduleActionAfterTicks(ATTACK_DELAY_TICKS, () -> executeDelayedAttack(client, originalSlot, 0));
+    }
+
+    private void executeDelayedAttack(MinecraftClient client, int originalSlot, int retries) {
+        if (client.player == null) {
+            attackQueued = false;
+            return;
+        }
+
+        if (shouldSkipAttack(client) && retries < 20) {
+            scheduleActionAfterTicks(1, () -> executeDelayedAttack(client, originalSlot, retries + 1));
+            return;
+        }
+
+        triggerMainHandAttack(client);
+        scheduleActionAfterTicks(1, () -> restoreSelectedSlot(client, originalSlot));
+    }
+
+    private void restoreSelectedSlot(MinecraftClient client, int previousSlot) {
+        if (client.player != null && previousSlot != -1) {
+            client.player.getInventory().setSelectedSlot(previousSlot);
+        }
+        attackQueued = false;
     }
 
     private boolean shouldSkipAttack(MinecraftClient client) {
