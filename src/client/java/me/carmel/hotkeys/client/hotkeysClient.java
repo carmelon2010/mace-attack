@@ -8,7 +8,6 @@ import net.minecraft.client.option.KeyBinding;
 import org.lwjgl.glfw.GLFW;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.Hand;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -199,10 +198,8 @@ public class hotkeysClient implements ClientModInitializer {
             return;
         }
 
-        client.player.swingHand(Hand.MAIN_HAND);
         KeyBinding.setKeyPressed(client.options.attackKey.getDefaultKey(), true);
         KeyBinding.onKeyPressed(client.options.attackKey.getDefaultKey());
-        client.player.swingHand(Hand.MAIN_HAND);
         KeyBinding.setKeyPressed(client.options.attackKey.getDefaultKey(), false);
     }
 }
