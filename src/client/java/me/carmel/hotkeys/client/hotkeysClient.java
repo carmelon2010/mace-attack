@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 public class hotkeysClient implements ClientModInitializer {
     private static KeyBinding SpearLunge;
     private static KeyBinding MaceAttack;
-    private static final int ATTACK_DELAY_TICKS = 2;
+    private static final int ATTACK_DELAY_TICKS = 0;
 
     private long currentTick = 0;
     private boolean attackQueued = false;
