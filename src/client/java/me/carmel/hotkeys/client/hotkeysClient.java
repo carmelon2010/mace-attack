@@ -21,7 +21,6 @@ import java.util.regex.Pattern;
 public class hotkeysClient implements ClientModInitializer {
     private static KeyBinding SpearLunge;
     private static KeyBinding MaceAttack;
-    private static final int ATTACK_DELAY_TICKS = 0;
 
     private long currentTick = 0;
     private boolean attackQueued = false;
@@ -131,7 +130,7 @@ public class hotkeysClient implements ClientModInitializer {
         int originalSlot = inventory.getSelectedSlot();
         attackQueued = true;
         inventory.setSelectedSlot(slot);
-        scheduleActionAfterTicks(ATTACK_DELAY_TICKS, () -> executeDelayedAttack(client, originalSlot, 0));
+        executeDelayedAttack(client, originalSlot, 0);
     }
 
     private void executeDelayedAttack(MinecraftClient client, int originalSlot, int retries) {
