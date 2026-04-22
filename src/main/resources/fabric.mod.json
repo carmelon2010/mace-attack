@@ -16,6 +16,9 @@
       "me.carmel.hotkeys.hotkeys"
     ]
   },
+  "mixins": [
+    "hotkeys.client.mixins.json"
+  ],
   "depends": {
     "fabricloader": ">=${loader_version}",
     "fabric-api": "*",
